@@ -1,25 +1,44 @@
+{#
+This template is rendered identically for all problems.
+The PID is changed in the browser using find/replace.
+Some of the ids in this file need to look exactly like INGInious expects.
+#}
 <div class="form-group row">
+    {#
+    header-PID is automatically recognized by the studio JavaScript
+    All other inputs must be manually filled in by our own script.
+    #}
     <label for="header-PID" class="col-sm-2 control-label">Context</label>
     <div class="col-sm-10">
       <textarea id="header-PID" class="form-control" name="problem[PID][header]"></textarea>
     </div>
 </div>
 <div class="form-group row">
-  <label for="subtask_string-PID" class="col-sm-2 control-label">Show subset of subtasks</label>
+  <label for="PID--subtask_string" class="col-sm-2 control-label">Show subset of subtasks</label>
     <div class="col-sm-10">
-      <input id="subtask_string-PID" class="form-control" type="text" name="problem[PID][subtask_string]"
+      <input id="PID--subtask_string" class="form-control" type="text" name="problem[PID][subtask_string]"
              placeholder="For example '1;1/3' to always show the first, and then one of the next three. Leave empty to show all."></input>
     </div>
+</div>
+<div class="form-group row">
+  <label for="PID--score_string" class="col-sm-2 control-label">Score string</label>
+  <div class="col-sm-10">
+    <input id="PID--score_string" class="form-control" type="text" name="problem[PID][score_string]"
+           placeholder="Points: minimum/expected/total. Default is 1 point per subtask, no minimum, expecting full marks."></input>
+  </div>
 </div>
 <div class="form-group">
     <div class="col-sm-12">
         <h4 style="text-align: center">Subtasks</h4>
-        <div id="multifill-subtasks-PID" class="mb-3">
-
+        <div id="PID--multifill-subtasks" class="mb-3">
+          {#
+          This is where subtask editors are placed.
+          See multifill_editbox_templates.html
+          #}
         </div>
         <div class="row">
           <div class="col-sm-6">
-            <button class="btn btn-info btn-sm btn-block" type="button" onclick="studio_create_multifill_subtask('PID', {})">''
+            <button class="btn btn-info btn-sm btn-block" type="button" onclick="studio_create_multifill_subtask('PID', {})">
               <i class="fa fa-plus"></i> Add Subtask
             </button>
           </div>

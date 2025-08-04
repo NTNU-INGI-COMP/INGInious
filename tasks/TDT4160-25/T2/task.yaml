@@ -38,7 +38,8 @@ problems:
             I denne oppgaven skal du ta for deg RISC-V-instruksjoner, og hvordan de ser ut når de skrives i maskinspråk.
 
             Når du svarer, oppgi svaret i binærtall, og med **like mange bits** som i maskinspråk-representasjonen.
-        subtask_string: ''
+        subtask_string: 1/2
+        score_string: ''
         subtasks:
         -   text: |-
                 Gitt følgende instruksjon:
@@ -55,12 +56,13 @@ problems:
                 Hva blir verdiene til :code:`rs1`, :code:`rs2` og :code:`rd` i instruksjonen skrevet i maskinspråk?
 
                 ============ =======================
-                :code:`rs1`: :input:`rs1, maxlen=10`
+                :code:`rs1`: :input:`rs1`
 
-                :code:`rs2`: :input:`rs2, maxlen=10`
+                :code:`rs2`: :input:`rs2`
 
-                :code:`rd`:  :input:`rd, maxlen=10`
+                :code:`rd`:  :input:`rd`
                 ============ =======================
+            giveDetailedFeedback: true
         -   text: |-
                 Gitt følgende instruksjon:
 
@@ -80,6 +82,7 @@ problems:
 
                 :code:`rd`:  :input:`rd, maxlen=10`
                 ============ =======================
+            giveDetailedFeedback: false
     instruksjon-til-maskinkode:
         type: multifill
         name: Instruksjoner på maskinspråk 2
@@ -87,7 +90,8 @@ problems:
             I denne oppgaven skal du konvertere RISC-V-instruksjoner til maskinspråk-representasjon.
 
             Svarene skal oppgis i binærtall, men du kan fritt bruke mellomrom der du vil for å gjøre svaret mer leselig.
-        subtask_string: 1/2;1/2;1/2
+        subtask_string: ''
+        score_string: ''
         subtasks:
         -   text: |+
                 Gitt følgende RISC-V-instruksjon:
@@ -101,6 +105,7 @@ problems:
                 :input:`maxlen=40,ignorespace,answer=""`
 
 
+            giveDetailedFeedback: false
         -   text: |-
                 Gitt følgende RISC-V-instruksjon:
 
@@ -111,6 +116,7 @@ problems:
                 Hva blir den fulle 32-bits enkodingen av instruksjonen i maskinspråk?
 
                 :input:`maxlen=40,ignorespace,answer=""`
+            giveDetailedFeedback: false
         -   text: |-
                 Gitt følgende RISC-V-instruksjon:
 
@@ -121,6 +127,7 @@ problems:
                 Hva blir den fulle 32-bits enkodingen av instruksjonen i maskinspråk?
 
                 :input:`maxlen=40,ignorespace,answer=""`
+            giveDetailedFeedback: false
         -   text: |-
                 Gitt følgende RISC-V-instruksjon:
 
@@ -131,6 +138,7 @@ problems:
                 Hva blir den fulle 32-bits enkodingen av instruksjonen i maskinspråk?
 
                 :input:`maxlen=40,ignorespace,answer=""`
+            giveDetailedFeedback: false
         -   text: |-
                 Gitt følgende RISC-V-instruksjon:
 
@@ -141,6 +149,7 @@ problems:
                 Hva blir den fulle 32-bits enkodingen av instruksjonen i maskinspråk?
 
                 :input:`maxlen=40,ignorespace,answer=""`
+            giveDetailedFeedback: false
         -   text: |-
                 Gitt følgende RISC-V-instruksjon:
 
@@ -151,6 +160,7 @@ problems:
                 Hva blir den fulle 32-bits enkodingen av instruksjonen i maskinspråk?
 
                 :input:`maxlen=40,ignorespace,answer=""`
+            giveDetailedFeedback: false
     cword-to-instructions:
         type: multifill
         name: Kontrollord til instruksjon
@@ -161,7 +171,8 @@ problems:
             .. image:: T2/datapath2.png
               :width: 800
               :alt: Enkeltsykelprosessoren
-        subtask_string: 1;2/3
+        subtask_string: ''
+        score_string: ''
         subtasks:
         -   text: |-
                 Etter dekoding av en instruksjon vet du følgende:
@@ -185,6 +196,7 @@ problems:
                 :input:`type=check,answer=false` :code:`sub x5, x5, x7`
 
                 :input:`type=check,answer=false` :code:`beq x6, x0, -50`
+            giveDetailedFeedback: false
         -   text: |-
                 Etter dekoding av en instruksjon vet du følgende:
 
@@ -206,6 +218,7 @@ problems:
                 :input:`type=check,answer=false` :code:`lw x6, -120(x4)`
 
                 :input:`type=check,answer=false` :code:`sw x2, -120(x8)`
+            giveDetailedFeedback: false
         -   text: |-
                 Etter dekoding av en instruksjon vet du følgende:
 
@@ -223,6 +236,7 @@ problems:
                 :input:`type=check,answer=false` :code:`sw x9, 20(x2)`
 
                 :input:`type=check,answer=false` :code:`addi x4, x0, 120`
+            giveDetailedFeedback: false
         -   text: |
                 Etter dekoding av en instruksjon vet du følgende:
 
@@ -241,3 +255,4 @@ problems:
                 :input:`type=check,answer=false` :code:`add x2, x4, x5`
 
                 :input:`type=check,answer=false` :code:`lw x22, 80(x3)`
+            giveDetailedFeedback: false

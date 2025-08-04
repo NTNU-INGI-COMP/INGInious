@@ -14,4 +14,4 @@ session_parameters:
 superadmins:
 - superadmin
 tasks_directory: /inginious/tasks
-use_minified_js: true
+use_minified_js: false

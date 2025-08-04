@@ -33,8 +33,7 @@ class SubtaskString:
     """
 
     def __init__(self, string):
-        # Ignore whitespace
-        self.string = string.replace(" ", "")
+        self.string = string
 
         # How many subtasks are pulled, and how many are there to pull from
         self.total_pull = 0
@@ -54,7 +53,7 @@ class SubtaskString:
                     pull = int(pull)
                     bag = int(bag)
                 except ValueError:
-                    raise Exception(f"Subtask string contains illegal group: {self.string}")
+                    raise ValueError(f"Subtask string contains illegal group: {self.string}")
 
                 loose_group_result.append((pull, bag))
 
@@ -62,19 +61,43 @@ class SubtaskString:
                 self.total_bag += bag
 
                 if pull < 0:
-                    raise Exception(f"Subtask string contains negative pull: {self.string}")
+                    raise ValueError(f"Subtask string contains negative pull: {self.string}")
                 if bag < 1:
-                    raise Exception(f"Subtask string contains empty bag: {self.string}")
+                    raise ValueError(f"Subtask string contains empty bag: {self.string}")
                 if pull > bag:
-                    raise Exception(f"Subtask string has pull > bag size: {self.string}")
+                    raise ValueError(f"Subtask string has pull > bag size: {self.string}")
 
             self.groups.append(loose_group_result)
+
+    @classmethod
+    def default_for_subtasks(cls, subtasks):
+        """
+        Creates a default SubtaskString for a set of subtasks.
+        :return: a SubtaskString including each subtask, in order
+        """
+        synthesized_string = ";".join(["1"] * len(subtasks))
+        return cls(synthesized_string)
+
+    def get_total_bag_size(self):
+        """
+        :return: the number of subtasks to pick from
+        """
+        return self.total_bag
+
+    def get_total_pull_size(self):
+        """
+        :return: the number of subtasks that will be included in a pull
+        """
+        return self.total_pull
 
     def sample_subtasks(self, task_id, seed):
         """
         Draws a list of subtasks conforming to the Subtask String.
         For a subtask string like 1;2/3, the result can for example be
         [0, 2, 1] or [0, 1, 3]
+
+        :param: task_id the id of the problem
+        :param: seed: a string that should be different for each user
         """
 
         rand = Random(f"{task_id}#{seed}")
@@ -83,7 +106,10 @@ class SubtaskString:
         bag_counter = 0
 
         for loose_group in self.groups:
+            # Within each loose group, tasks are shuffled
             shuffler = []
+
+            # Extract `pull` out of the next `bag` subtasks
             for pull, bag in loose_group:
                 this_bag = list(range(bag_counter, bag_counter + bag))
                 bag_counter += bag
@@ -93,7 +119,55 @@ class SubtaskString:
             rand.shuffle(shuffler)
             result.extend(shuffler)
 
+        assert bag_counter == self.total_bag
+
         return result
+
+
+class ScoreString:
+    """
+    A string containing three itegers, like 2/3/4
+    The first integer is the minimum score required on the task.
+    The second integer is the expected score.
+    The last is the total score of the problem, evenly distributed among the subtasks.
+    While a submission is allowed to perform below expected on a subproblem,
+    the total score must be at least equal to the total expected score.
+    """
+
+    def __init__(self, string):
+        self.string = string
+
+        parts = self.string.split("/")
+
+        if len(parts) != 3:
+            raise ValueError(f"Expected 3 parts in score string (min/expected/total), recieved '{self.string}'")
+
+        try:
+            self._minimum = int(parts[0])
+            self._expected = int(parts[1])
+            self._total = int(parts[2])
+        except ValueError as e:
+            raise ValueError(f"Score string contains illegal score: '{self.string}'")
+
+        if self._minimum < 0 or self._minimum > self._total:
+            raise ValueError(f"Minimum score is outside valid range: {self._minimum}")
+        if self._expected < 0 or self._expected > self._total:
+            raise ValueError(f"Expected score is outside valid range: {self._expected}")
+        if self._total < 0:
+            raise ValueError(f"Total score can not be negative: {self._total}")
+
+    @classmethod
+    def default_for_subtasks(cls, subtasks):
+        """
+        Creates a default score string for the given set of subtasks.
+        :return: a ScoreString: 1 point per subtask. No minimum score, but expecting full marks.
+        """
+        synthesized_string = f"0/{len(subtasks)}/{len(subtasks)}"
+        return cls(synthesized_string)
+
+
+
+
 
 class MultifillProblem(Problem):
     """
@@ -106,32 +180,41 @@ class MultifillProblem(Problem):
         self._header = content.get('header', "")
 
         if "subtasks" not in content or not isinstance(content['subtasks'], (list, tuple)):
-            raise Exception(f"Multifill problem {problemid} does not have any subtasks")
+            raise ValueError(f"Multifill problem {problemid} does not have any subtasks")
 
         self._subtasks = content['subtasks']
         for index, subtask in enumerate(self._subtasks):
             if "text" not in subtask:
-                raise Exception(f"Subtask {index} is missing text")
+                raise ValueError(f"Subtask {index} is missing text")
 
         # The subtask string describes which subtasks to display.
         # The default is to display all subtasks
         # If there is only one displayed subtask, the subtask letter (a) is omitted
-        self._subtask_string = None
         if content.get("subtask_string", "").strip() != "":
             self._subtask_string = SubtaskString(content["subtask_string"])
+        else:
+            self._subtask_string = SubtaskString.default_for_subtasks(self._subtasks)
 
-            # Check that the subtask string adds up to the correct amount of subtasks
-            num_subtasks = len(self._subtasks)
-            total_bag = self._subtask_string.total_bag
-            if num_subtasks != total_bag:
-                raise Exception(f"Problem {problemid} has {num_subtasks} subtasks, but expects to pick from {total_bag}")
+        # Check that the subtask string adds up to the correct amount of subtasks
+        num_subtasks = len(self._subtasks)
+        total_bag = self._subtask_string.get_total_bag_size()
+        if num_subtasks != total_bag:
+            raise ValueError(f"Problem {problemid} has {num_subtasks} subtasks, but the subtask string expects {total_bag}.")
+
+        # The score string decides how many points one gets from the task,
+        # and how many points are needed to not fail the exercise.
+        # It also contains expected score, which must be satisfied on average across all tasks
+        if content.get("score_string", "").strip() != "":
+            self._score_string = ScoreString(content["score_string"])
+        else:
+            self._score_string = ScoreString.default_for_subtasks(self._subtasks)
 
     @classmethod
     def get_type(cls):
         return "multifill"
 
     @classmethod
-    def input_type(self):
+    def input_type(cls):
         return dict
 
     @classmethod
@@ -143,13 +226,25 @@ class MultifillProblem(Problem):
 
         # Turn subtasks into a list, instead of a dict
         if "subtasks" in problem_content:
+            # Use the dict key to sort the subtasks
             subtasks = [(int(key), value) for key, value in problem_content["subtasks"].items()]
             subtasks.sort()
+            # Once the subtasks have been sorted by key, stip away the key
             subtasks = [val for _, val in subtasks]
-            # Ensure all subtasks are dicts with a text field
+
+            # Each subtask is a dict which should contain
+            #  - text
+            #  - giveDetailedFeedback (bool) if true, feedback is given per text field
             for subtask in subtasks:
+                assert isinstance(subtask, dict)
+
                 if "text" not in subtask:
                     subtask["text"] = ""
+
+                # Convert giveDetailedFeedback to a boolean
+                giveDetailedFeedback = subtask.get("giveDetailedFeedback", "off").lower()
+                subtask["giveDetailedFeedback"] = giveDetailedFeedback in ["on", "true"]
+
             problem_content["subtasks"] = subtasks
 
         return problem_content
@@ -157,7 +252,7 @@ class MultifillProblem(Problem):
     @classmethod
     def get_text_fields(cls):
         fields = Problem.get_text_fields()
-        fields.update({"header": True, "subtask_string": True, "subtasks": [{"text": True}]})
+        fields.update({"header": True, "subtask_string": True, "score_string": True, "subtasks": [{"text": True}]})
         return fields
 
     def input_is_consistent(self, task_input, default_allowed_extension, default_max_size):
@@ -177,7 +272,11 @@ class MultifillProblem(Problem):
 
         return True, None, ["MyCoolMessage"], 0, ""
 
+
 class DisplayableMultifillProblem(MultifillProblem, DisplayableProblem):
+    """
+    This is the class responsible for drawing what the studens see
+    """
 
     def __init__(self, problemid, content, translations, taskfs):
         MultifillProblem.__init__(self, problemid, content, translations, taskfs)
@@ -236,11 +335,19 @@ class DisplayableMultifillProblem(MultifillProblem, DisplayableProblem):
 
     @classmethod
     def show_editbox(cls, template_helper, key, language):
+        """
+        This is the top level task editor interface.
+        The rendered template does not contain any problem-sepecific content.
+        """
         return template_helper.render("tasks/multifill_editbox.html",
                                       template_folder=PATH_TO_TEMPLATES, key=key)
 
     @classmethod
     def show_editbox_templates(cls, template_helper, key, language):
+        """
+        This is the template of the per subtask editor.
+        It is rendered once on the server, and copied in the browser using js.
+        """
         return template_helper.render("tasks/multifill_editbox_templates.html",
                                       template_folder=PATH_TO_TEMPLATES, key=key)
 
