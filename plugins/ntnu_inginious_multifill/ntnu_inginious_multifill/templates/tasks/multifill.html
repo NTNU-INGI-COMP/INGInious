@@ -4,10 +4,25 @@
 
 <div id="{{ inputId }}--multifill-subtasks" class="multifill-subtasks">
 {% for subtask in subtasks %}
-  <div class="multfill-subtask">
-  {% if subtask.title is defined %}
-    <div name="{{ subtask.dict_id }}" class="multifill-subtask-title">{{ subtask.title }}</div>
-  {% endif %}
+
+  {# The name attribute is used to find this div when showing feedback #}
+  <div class="multifill-subtask" name="{{ subtask.dict_id }}">
+
+    <div class="multifill-subtask-titlebar">
+      <img class="multifill-subtask-icon-success" src="/plugins/ntnu_inginious_multifill/static/icons/subtask_success.svg" width="16px" height="16px">
+      <img class="multifill-subtask-icon-failed" src="/plugins/ntnu_inginious_multifill/static/icons/subtask_failed.svg" width="16px" height="16px">
+
+      {% if subtask.title is defined %}
+      <div class="multifill-subtask-title">
+      {{ subtask.title }}
+      </div>
+      {% endif %}
+
+      {% if subtask.has_detailed_feedback %}
+        <a class="multifill-link-show-detailed-feedback" href="" onclick="return show_detailed_feedback_multifill('{{ subtask.dict_id }}')">{{_("Show detailed feedback")}}</a>
+        <a class="multifill-link-hide-detailed-feedback" href="" onclick="return hide_detailed_feedback_multifill('{{ subtask.dict_id }}')">{{_("Hide detailed feedback")}}</a>
+      {% endif %}
+    </div>
 
   {{ subtask.html | safe }}
 

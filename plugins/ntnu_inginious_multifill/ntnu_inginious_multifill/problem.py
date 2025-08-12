@@ -321,7 +321,11 @@ class Input:
                     'autocomplete="off" '
                     'data-optional="True">')
         elif self._type == "check":
-            return f'<input class="ntnu-inline-form-check-input" type="checkbox" name="{self.get_dict_id()}" data-optional="True">'
+            # We wrap the checkbox in a label, since only the label is able to be styled
+            return ('<label class="ntnu-inline-form-check-input">'
+                    f'<input type="checkbox" name="{self.get_dict_id()}" data-optional="True">'
+                    '</label>')
+
 
         raise ValueError("Unknown input type")
 
@@ -668,7 +672,10 @@ class DisplayableMultifillProblem(MultifillProblem, DisplayableProblem):
         # Rendered html and metadata for the template
         subtasks = []
         for visual_index, subtask in enumerate(shown_subtasks):
-            subtask_data = { "dict_id": subtask.get_dict_id() }
+            subtask_data = {
+                "dict_id": subtask.get_dict_id(),
+                "has_detailed_feedback": subtask.has_detailed_feedback()
+            }
 
             if len(shown_subtasks) > 1:
                 subtask_data["title"] = chr(ord("a") + visual_index) + ") "

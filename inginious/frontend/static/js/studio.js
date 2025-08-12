@@ -274,6 +274,11 @@ function studio_submit()
 
     studio_display_task_submit_message("Saving...", "", "info", false);
 
+    // Taken from submitTask in task.js
+    $('html, body').animate({
+        scrollTop: $('#task_edit_submit_status').offset().top - 100
+    }, 200);
+
     $('form#edit_task_form .subproblem_order').each(function(index, elem)
     {
         $(elem).val(index);

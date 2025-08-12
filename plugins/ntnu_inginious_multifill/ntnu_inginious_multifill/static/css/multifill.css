@@ -4,33 +4,50 @@
     gap: 1.25rem;
 }
 
-.multifill-subtask {
+.multifill-subtask-titlebar {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 5px;
+    line-height: 1;
 
+    .multifill-subtask-title {
+        font-size: 1.1rem;
+        font-weight: 300;
+    }
 }
 
-.multifill-subtask-title {
-    font-size: 1.1rem;
-    font-weight: 300;
-    line-height: 1.2;
+/* By default we hide the links for showing and hiding feedback */
+.multifill-link-show-detailed-feedback {
+    display: none;
+    font-size: 0.9rem;
 
-    &.multifill-success::before {
-        content: "";
-        display: inline-block;
-        height: 16px;
-        width: 21px;
-        background-size: 16px 16px;
-        background-image: url("/plugins/ntnu_inginious_multifill/static/icons/subtask_success.svg");
-        background-repeat: no-repeat;
+    .multifill-failed:not(.multifill-show-detailed-feedback) & {
+        display: inline;
     }
+}
+.multifill-link-hide-detailed-feedback {
+    display: none;
+    font-size: 0.9rem;
 
-    &.multifill-failed::before {
-        content: "";
+    .multifill-failed.multifill-show-detailed-feedback & {
+        display: inline;
+    }
+}
+
+/* Hide subtask feedback icons unless the subtask has a feedback class */
+.multifill-subtask-icon-success {
+    display: none;
+
+    .multifill-success & {
         display: inline-block;
-        height: 16px;
-        width: 21px;
-        background-size: 16px 16px;
-        background-image: url("/plugins/ntnu_inginious_multifill/static/icons/subtask_failed.svg");
-        background-repeat: no-repeat;
+    }
+}
+.multifill-subtask-icon-failed {
+    display: none;
+
+    .multifill-failed & {
+        display: inline-block;
     }
 }
 
@@ -72,24 +89,39 @@ input.ntnu-inline-form-control[type="text"] {
         width: 100%;
     }
 
-    &.multifill-success {
+    .multifill-show-detailed-feedback &.multifill-success {
         background-color: #d1ffbd;
     }
 
-    &.multifill-failed {
+    .multifill-show-detailed-feedback &.multifill-failed {
         background-color: #FFCCCB;
     }
 }
 
-input.ntnu-inline-form-check-input {
-    margin-top: .3rem;
+.ntnu-inline-form-check-input {
+    display: inline !important; /* Override INGInious css */
 
-    &.multifill-success {
-        background-color: #d1ffbd;
+    /* Only display the feedback  */
+    .multifill-show-detailed-feedback &:has(.multifill-success)::after {
+        display: inline-block;
+        content: "";
+        margin-left: 2px;
+        width: 12px;
+        height: 12px;
+        background-size: 12px 12px;
+        background-repeat: no-repeat;
+        background-image: url("/plugins/ntnu_inginious_multifill/static/icons/subtask_success.svg");
     }
 
-    &.multifill-failed {
-        background-color: #FFCCCB;
+    .multifill-show-detailed-feedback &:has(.multifill-failed)::after {
+        display: inline-block;
+        content: "";
+        margin-left: 2px;
+        width: 12px;
+        height: 12px;
+        background-size: 12px 12px;
+        background-repeat: no-repeat;
+        background-image: url("/plugins/ntnu_inginious_multifill/static/icons/subtask_failed.svg");
     }
 }
 

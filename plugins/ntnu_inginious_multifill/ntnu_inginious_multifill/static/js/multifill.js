@@ -70,17 +70,34 @@ function studio_delete_multifill_last_subtask(pid) {
   subtask_list.children().last().remove();
 }
 
-function load_input_multifill(submissionid, key, input)
-{
-  console.log("Load input multifill. key: " + key + ". input: ");
-  console.log(input);
+function load_input_multifill(submissionid, pid, input) {
+  const subtasks_div = $("#" + pid + "--multifill-subtasks");
+
+  const task_input = input[pid];
+  if (!(task_input instanceof Object))
+    return;
+
+  // Go through all visible inputs within the subtask and fill them in
+  for (const input_elm of subtasks_div.find('input')) {
+    const type = $(input_elm).attr('type');
+    const name = $(input_elm).attr('name');
+    if (type === "text") {
+      $(input_elm).val(task_input[name] ?? "");
+    } else if (type === "checkbox") {
+      $(input_elm).prop('checked', (task_input[name] ?? "").length > 0);
+    }
+  }
 }
 
-function load_feedback_multifill(pid, content)
-{
+const MULTIFILL_SUCCESS_CLASS = "multifill-success";
+const MULTIFILL_FAILED_CLASS = "multifill-failed";
+const SUBTASK_SHOW_DETAILED_CLASS = "multifill-show-detailed-feedback";
+
+function load_feedback_multifill(pid, content) {
   const subtasks_div = $("#" + pid + "--multifill-subtasks")
   // Start by removing all previous success and failure markers
-  subtasks_div.find('*').removeClass(["multifill-success", "multifill-failed"]);
+  // and disabling showing detailed feedback
+  subtasks_div.find('*').removeClass([MULTIFILL_SUCCESS_CLASS, MULTIFILL_FAILED_CLASS, SUBTASK_SHOW_DETAILED_CLASS]);
 
   const response_body = content[1];
 
@@ -109,11 +126,21 @@ function load_feedback_multifill(pid, content)
   $("#task_alert_" + pid).html(getAlertCode("", response_body, alert_type, false));
 
   for (const success_id of success_ids) {
-    console.log("success: " + success_id);
-    $(`[name="${success_id}"]`, subtasks_div).addClass("multifill-success");
+    $(`[name="${success_id}"]`, subtasks_div).addClass(MULTIFILL_SUCCESS_CLASS);
   }
   for (const failed_id of failed_ids) {
-    console.log("failed: " + failed_id);
-    $(`[name="${failed_id}"]`, subtasks_div).addClass("multifill-failed");
+    $(`[name="${failed_id}"]`, subtasks_div).addClass(MULTIFILL_FAILED_CLASS);
   }
+}
+
+function show_detailed_feedback_multifill(subtask_id) {
+  const subtask_div = $(`[name="${subtask_id}"]`);
+  subtask_div.addClass(SUBTASK_SHOW_DETAILED_CLASS);
+  return false;
+}
+
+function hide_detailed_feedback_multifill(subtask_id) {
+  const subtask_div = $(`[name="${subtask_id}"]`);
+  subtask_div.removeClass(SUBTASK_SHOW_DETAILED_CLASS);
+  return false;
 }
