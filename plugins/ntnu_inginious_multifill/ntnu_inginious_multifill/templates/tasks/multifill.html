@@ -8,13 +8,14 @@
   {# The name attribute is used to find this div when showing feedback #}
   <div class="multifill-subtask" name="{{ subtask.dict_id }}">
 
+    {% if subtask.title is defined or subtask.has_detailed_feedback %}
     <div class="multifill-subtask-titlebar">
       <img class="multifill-subtask-icon-success" src="/plugins/ntnu_inginious_multifill/static/icons/subtask_success.svg" width="16px" height="16px">
       <img class="multifill-subtask-icon-failed" src="/plugins/ntnu_inginious_multifill/static/icons/subtask_failed.svg" width="16px" height="16px">
 
       {% if subtask.title is defined %}
       <div class="multifill-subtask-title">
-      {{ subtask.title }}
+        {{ subtask.title }}
       </div>
       {% endif %}
 
@@ -27,6 +28,7 @@
       </a>
       {% endif %}
     </div>
+    {% endif %}
 
   {{ subtask.html | safe }}
 

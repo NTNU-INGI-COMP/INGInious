@@ -150,12 +150,13 @@ class ScoreString:
             raise ValueError(f"Total score can not be negative: {self._total}")
 
     @classmethod
-    def default_for_subtasks(cls, subtasks):
+    def default_for_subtasks(cls, subtask_string):
         """
-        Creates a default score string for the given set of subtasks.
-        :return: a ScoreString: 1 point per subtask. No minimum score, but expecting full marks.
+        Creates a default score string for the given subtask string.
+        :return: a ScoreString: 1 point per visible subtask. No minimum score, but expecting full marks.
         """
-        synthesized_string = f"0/{len(subtasks)}/{len(subtasks)}"
+        pull_size = subtask_string.get_total_pull_size()
+        synthesized_string = f"0/{pull_size}/{pull_size}"
         return cls(synthesized_string)
 
     def get_minimum(self):
@@ -208,6 +209,22 @@ class Input:
      - casesensitive
        Make the comparison case sensitive
 
+     - type=int
+       A textbox that takes arbitrary textual input, but errors if something other than an integer is given
+       Always ignores space.
+
+     - type=float
+       A textbox that takes arbitrary textual input, but parses it as a float.
+       Both , and . can be used as separators, spaces are always ignored.
+     - decimals=<int>
+       Specify exactly how many decimals to expect. 0 is the same as setting type=int
+       If an answer is wrong because of this, it is included in the feedback text.
+     - tolerance=<float>
+       Applies to both type=int and type=float.
+       Allow answers to be wrong within the given tolerance.
+       Default is 10^-6
+       If decimals is specified, default tolerance is 0.51 * 10^-decimals
+       
      - type=check
        A checkbox
      - answer=true and answer=false
@@ -233,8 +250,27 @@ class Input:
         self._maxlen = 20
         self._ignorespace = False
         self._casesensitive = False
+        self._decimals = None
+        self._tolerance = None
 
         self._parse_text()
+
+        # Set defaults
+        if self._type == "float":
+            self._ignorespace = True
+            if self._tolerance is None:
+                if self._decimals is not None:
+                    self._tolerance = 0.51 * 10**(-self._decimals)
+                else:
+                    self._tolerance = 1e-6
+
+        if self._type == "int":
+            self._ignorespace = True
+            if self._tolerance is None:
+                self._tolerance = 1e-6
+            if self._decimals is None:
+                self._decimals = 0
+
         self._validate()
 
         self._html = self._to_html()
@@ -261,8 +297,8 @@ class Input:
                         raise ValueError(f"option 'id' expects a value")
                     self._id = value
                 elif key == "type":
-                    if value not in ["text", "check"]:
-                        raise ValueError(f"option 'type' expects either 'text' or 'check'")
+                    if value is None:
+                        raise ValueError(f"option 'type' expects a value")
                     self._type = value
                 elif key == "maxlen":
                     if value is None:
@@ -280,6 +316,14 @@ class Input:
                     if value is not None:
                         raise ValueError(f"option 'casesensitive' does not take a value")
                     self._casesensitive = True
+                elif key == "decimals":
+                    if value is not None:
+                        raise ValueError(f"option 'decimals' expects a value")
+                    self._decimals = int(value)
+                elif key == "tolerance":
+                    if value is not None:
+                        raise ValueError(f"option 'tolerance' expects a value")
+                    self._tolerance = float(value)
                 else:
                     raise ValueError(f"Unknown option: {key}" + (f"( = {value})" if value else ""))
 
@@ -289,19 +333,57 @@ class Input:
 
     def _validate(self):
         try:
-            if is_valid_id(self._id):
+            if not is_valid_id(self._id):
                 raise ValueError(f"Invalid id: {self._id}")
-            if self._type == "check" and self._answer not in ["true", "false", None]:
-                raise ValueError(f"Input of type check should have answer=true/false. Got: '{self._answer}'")
+
+            if self._type not in ["text", "check", "float", "int"]:
+                raise ValueError(f"Invalid input type: {self._type}")
+
+            if self._type != "text" and self._casesensitive:
+                raise ValueError(f"Input of type {self._type} can not have the 'casesensitive' option")
+
+            if self._type == "check":
+                if self._answer not in ["true", "false", None]:
+                    raise ValueError(f"Input of type {self._type} should have answer=true/false. Got: '{self._answer}'")
+                if self._ignorespace:
+                    raise ValueError(f"Input of type {self._type} can not have the 'ignorespace' option")
+
+            if self._type in ["float", "int"]:
+                if self._tolerance is None:
+                    raise ValueError(f"Input of type {self._type} must have a tolerance")
+                if self._type == "int" and self._decimals != 0:
+                    raise ValueError(f"Input of type {self._type} must have decimals=0")
+
+                if self._tolerance <= 0:
+                    raise ValueError(f"The tolerance must be strictly positive: {self._tolerance}")
+
+                if self._decimals is not None and self._decimals < 0:
+                    raise ValueError(f"Negative number of decimals not supported")
+
+                # Check that the restriction on decimals does not make it impossible to hit the answer
+                if self._answer is not None:
+                    value = float(self._answer)
+                    if self._decimals is not None:
+                        rounded_value = round(value, self._decimals)
+                        if abs(rounded_value - value) > self._tolerance:
+                            raise ValueError(f"It it impossible to get within {value} with {self._decimals} decimals, and a tolerance of {self._tolerance}")
+
+            else:
+                if self._tolerance is not None:
+                    raise ValueError(f"Input of type {self._type} can not have a tolerance")
+                if self._decimals is not None:
+                    raise ValueError(f"Input of type {self._type} can not have the 'decimals' option")
+
         except ValueError as e:
             e.add_note(f"in input {self.get_dict_id()}")
+            raise e
 
     def _to_html(self):
         # We make both text fields and check boxes optional, to allow students to submit partial responses,
         # and to allow multiple choice questions to not have a single correct option.
         # The second part relies on a modification made in inginious/frontend/static/js/task.js
 
-        if self._type == "text":
+        if self._type in ["text", "int", "float"]:
             classes = ["monospace", "ntnu-inline-form-control"]
 
             if self._maxlen <= 10:
@@ -328,7 +410,6 @@ class Input:
                     f'<input type="checkbox" name="{self.get_dict_id()}" data-optional="True">'
                     '</label>')
 
-
         raise ValueError("Unknown input type")
 
     def get_html(self):
@@ -336,22 +417,25 @@ class Input:
 
     def check_answer(self, problem_input):
         """
-        :returns: true if the input is correctly answered, false otherwise.
-        If no answer is specified, any answer is correct
+        :returns: a tuple (result, message)
+        The results is true if the input is correctly answered, false otherwise.
+        If no answer is specified, any answer is correct.
+        The message provides an optional explanation, or is None.
         """
         if self._answer is None:
-            return True
+            return (True, None)
 
         dict_id = self.get_dict_id()
 
-        if self._type == "text":
+        if self._type in ["text", "int", "float"]:
             if dict_id not in problem_input:
-                return False
+                return (False, _("Answer is missing input '{}'").format(dict_id))
 
             response = problem_input[dict_id]
             if not isinstance(response, str):
-                return False
+                return (False, _("Answer to '{}' is not a string").format(dict_id))
 
+            original_response = response
             answer = self._answer
 
             if self._ignorespace:
@@ -362,7 +446,32 @@ class Input:
                 response = response.lower()
                 answer = answer.lower()
 
-            return response == answer
+            if self._type == "text":
+                return (response == answer, None)
+
+            # Do number parsing
+            response = response.replace(",", ".")
+            points = response.count(".")
+
+            if points > 1:
+                return (False, _("Too many decimal points in response: '{}'").format(original_response))
+
+            if self._decimals == 0:
+                if points != 0:
+                    return (False, _("Expected no decimal point in response: '{}'").format(original_response))
+            elif self._decimals is not None:
+                if points != 1:
+                    return (False, _("Expected a decimal point in response: '{}'").format(original_response))
+                given_decimals = len(response) - response.find('.') - 1
+                if given_decimals != self._decimals:
+                    return (False, _("Expected {} digits after the decimal point, got {}").format(original_response))
+
+            try:
+                response_float = float(response)
+            except:
+                return (False, _("Expected a number, got '{}'").format(original_response))
+
+            return (abs(response_float - float(answer)) <= self._tolerance, None)
 
         if self._type == "check":
             # If the checkbox is checked, we get the value "on"
@@ -373,7 +482,7 @@ class Input:
 
             answer = self._answer == "true"
 
-            return response == answer
+            return (response == answer, None)
 
         raise ValueError("Unknown input type")
 
@@ -466,18 +575,22 @@ class Subtask:
     def check_answer(self, problem_input):
         """
         Checks all inputs in this subtask against the given dict of problem inputs
-        :return: a tuple (passed_inputs, failed_inputs), the inputs that passed or failed
+        :return: a tuple (passed_inputs, failed_inputs, messages), the inputs that passed or failed, and any messages
         """
         passed_inputs = []
         failed_inputs = []
+        messages = []
 
         for inp in self._inputs:
-            if inp.check_answer(problem_input):
+            result, message = inp.check_answer(problem_input)
+            if result:
                 passed_inputs.append(inp)
             else:
                 failed_inputs.append(inp)
+            if message is not None:
+                messages.append(message)
 
-        return passed_inputs, failed_inputs
+        return passed_inputs, failed_inputs, messages
 
 
 class MultifillProblem(Problem):
@@ -566,6 +679,8 @@ class MultifillProblem(Problem):
 
                 if "text" not in subtask:
                     subtask["text"] = ""
+                # Strip text to avoid weird rst rendering issues
+                subtask["text"] = subtask["text"].strip()
 
                 # Convert giveDetailedFeedback to a boolean
                 detailed_feedback = subtask.get("giveDetailedFeedback", "off").lower()
@@ -610,6 +725,7 @@ class MultifillProblem(Problem):
          - A list of failed subtasks
          - A list passed inputs, for failed subtasks with detailed feedback
          - A list failed inputs, for failed subtasks with detailed feedback
+         - A list of any extra messages
         """
         # Sample subtasks using the user's username, to ensure people are not cheating by submitting other subtasks
         username = task_input['@username']
@@ -623,8 +739,11 @@ class MultifillProblem(Problem):
         # Only if a subtask has detailed feedback are individual inputs corrected
         subtask_inputs_passed = []
         subtask_inputs_failed = []
+        # Optional helpful messages, e.g, if inputs are improperly formatted
+        subtask_messages = []
+
         for subtask in shown_subtasks:
-            passed_inputs, failed_inputs = subtask.check_answer(problem_input)
+            passed_inputs, failed_inputs, messages = subtask.check_answer(problem_input)
 
             if len(failed_inputs) == 0:
                 # Passed the subtask!
@@ -636,13 +755,16 @@ class MultifillProblem(Problem):
                     subtask_inputs_passed.extend(passed_inputs)
                     subtask_inputs_failed.extend(failed_inputs)
 
+            subtask_messages.extend(messages)
+
         assert len(subtasks_passed) + len(subtasks_failed) == len(shown_subtasks)
 
         return (self._score_string,
                 subtasks_passed,
                 subtasks_failed,
                 subtask_inputs_failed,
-                subtask_inputs_passed)
+                subtask_inputs_passed,
+                subtask_messages)
 
 
 class DisplayableMultifillProblem(MultifillProblem, DisplayableProblem):

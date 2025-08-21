@@ -107,7 +107,7 @@ class MultifillAgent(Agent):
         epsilon = .05 # To avoid floating point rounding errors failing students
 
         for problem in problems:
-            score_string, subtasks_passed, subtasks_failed, subtask_inputs_failed, subtask_inputs_passed = problem.check_multifill_answers(task_input, language)
+            score_string, subtasks_passed, subtasks_failed, subtask_inputs_failed, subtask_inputs_passed, subtask_messages = problem.check_multifill_answers(task_input, language)
 
             problem_result = "success"
             problem_message = []
@@ -126,7 +126,9 @@ class MultifillAgent(Agent):
             if achieved + epsilon < score_string.get_minimum():
                 result = False
                 problem_result = "failed"
-                problem_messages.append(_("You need at least {:g} points on this problem").format(minimum))
+                problem_message.append(_("You need at least {:g} points on this problem").format(minimum))
+
+            problem_message.extend(subtask_messages)
 
             # Provide feedback per subtask, or even per input when detailed feedback is configure
             success = []
