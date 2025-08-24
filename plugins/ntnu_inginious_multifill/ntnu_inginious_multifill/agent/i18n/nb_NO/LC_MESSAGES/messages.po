@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-08-19 13:42+0200\n"
+"POT-Creation-Date: 2025-08-24 13:52+0200\n"
 "PO-Revision-Date: 2025-08-19 13:44+0200\n"
 "Last-Translator: Håvard Rognebakke Krogstie <havard.rkrogstie@ntnu.no>\n"
 "Language: nb_NO\n"
@@ -18,22 +18,69 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
 
-#: plugins/ntnu_inginious_multifill/ntnu_inginious_multifill/agent/__init__.py:124
+#: plugins/ntnu_inginious_multifill/ntnu_inginious_multifill/multifill_env_type.py:14
+msgid "Multifill Grader"
+msgstr "Multifill Grader"
+
+#: plugins/ntnu_inginious_multifill/ntnu_inginious_multifill/problem.py:432
+#, python-brace-format
+msgid "Answer is missing input '{}'"
+msgstr "Svar mangler for input '{}'"
+
+#: plugins/ntnu_inginious_multifill/ntnu_inginious_multifill/problem.py:436
+#, python-brace-format
+msgid "Answer to '{}' is not a string"
+msgstr "Svaret gitt for input '{}' er ikke en streng"
+
+#: plugins/ntnu_inginious_multifill/ntnu_inginious_multifill/problem.py:457
+#, python-brace-format
+msgid "Too many decimal points in answer: '{}'"
+msgstr "For mange desimaler i svaret: '{}'"
+
+#: plugins/ntnu_inginious_multifill/ntnu_inginious_multifill/problem.py:461
+#, python-brace-format
+msgid "Expected no decimal point in answer, got: '{}'"
+msgstr "Forventet tall uten desimaltegn, fikk: '{}'"
+
+#: plugins/ntnu_inginious_multifill/ntnu_inginious_multifill/problem.py:464
+#, python-brace-format
+msgid "Expected a decimal point in answer, got: '{}'"
+msgstr "Forventet et desimaltegn i svaret, fikk: '{}'"
+
+#: plugins/ntnu_inginious_multifill/ntnu_inginious_multifill/problem.py:467
+#, python-brace-format
+msgid "Expected {} digits after the decimal point, got: '{}'"
+msgstr "Forventet {} siffer bak desimaltegnet, fikk: '{}'"
+
+#: plugins/ntnu_inginious_multifill/ntnu_inginious_multifill/problem.py:472
+#, python-brace-format
+msgid "Expected a number, got '{}'"
+msgstr "Forventet et tall, fikk '{}'"
+
+#: plugins/ntnu_inginious_multifill/ntnu_inginious_multifill/agent/__init__.py:126
 #, python-brace-format
 msgid "Points on this problem: {:g} / {:g}"
 msgstr "Poeng på denne oppgaven: {:g} / {:g}"
 
-#: plugins/ntnu_inginious_multifill/ntnu_inginious_multifill/agent/__init__.py:129
+#: plugins/ntnu_inginious_multifill/ntnu_inginious_multifill/agent/__init__.py:131
 #, python-brace-format
 msgid "You need at least {:g} points on this problem"
 msgstr "Du må få minst {:g} poeng på denne oppgaven"
 
-#: plugins/ntnu_inginious_multifill/ntnu_inginious_multifill/agent/__init__.py:157
+#: plugins/ntnu_inginious_multifill/ntnu_inginious_multifill/agent/__init__.py:162
 #, python-brace-format
 msgid "Total points on this exercise: {:g} / {:g}"
 msgstr "Poeng på denne øvingen: {:g} / {:g}"
 
-#: plugins/ntnu_inginious_multifill/ntnu_inginious_multifill/agent/__init__.py:160
-#, python-brace-format
-msgid "You need at least {:g} points to pass the exercise"
+#: plugins/ntnu_inginious_multifill/ntnu_inginious_multifill/agent/__init__.py:166
+#, fuzzy, python-brace-format
+msgid "You need at least {:g} points to pass the exercise."
 msgstr "Du må få minst {:g} poeng for å bestå denne øvingen"
+
+#: plugins/ntnu_inginious_multifill/ntnu_inginious_multifill/agent/__init__.py:170
+msgid "You did not meet the minimum points requirements on:"
+msgstr "Du møtte ikke minimumskravet til poeng på:"
+
+#: plugins/ntnu_inginious_multifill/ntnu_inginious_multifill/agent/__init__.py:172
+msgid "Question"
+msgstr "Spørsmål"

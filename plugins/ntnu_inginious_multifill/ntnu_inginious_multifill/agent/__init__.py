@@ -163,11 +163,11 @@ class MultifillAgent(Agent):
 
         result = True
         if total_points_achieved + epsilon < total_points_expected:
-            main_message.append(_("You need at least {:g} points to pass the exercise").format(total_points_expected))
+            main_message.append(_("You need at least {:g} points to pass the exercise.").format(total_points_expected))
             result = False
 
         if problems_failed:
-            message = _("You did not meet the minimum requirements on:") + "\n"
+            message = _("You did not meet the minimum points requirements on:") + "\n"
             for problem_index in problems_failed:
                 message += " * " + _("Question") + f" {problem_index + 1}\n"
             main_message.append(message)

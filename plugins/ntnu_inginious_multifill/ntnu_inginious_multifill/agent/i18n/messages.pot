@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-08-19 13:42+0200\n"
+"POT-Creation-Date: 2025-08-24 13:52+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,23 +17,70 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.17.0\n"
 
-#: plugins/ntnu_inginious_multifill/ntnu_inginious_multifill/agent/__init__.py:124
+#: plugins/ntnu_inginious_multifill/ntnu_inginious_multifill/multifill_env_type.py:14
+msgid "Multifill Grader"
+msgstr ""
+
+#: plugins/ntnu_inginious_multifill/ntnu_inginious_multifill/problem.py:432
+#, python-brace-format
+msgid "Answer is missing input '{}'"
+msgstr ""
+
+#: plugins/ntnu_inginious_multifill/ntnu_inginious_multifill/problem.py:436
+#, python-brace-format
+msgid "Answer to '{}' is not a string"
+msgstr ""
+
+#: plugins/ntnu_inginious_multifill/ntnu_inginious_multifill/problem.py:457
+#, python-brace-format
+msgid "Too many decimal points in answer: '{}'"
+msgstr ""
+
+#: plugins/ntnu_inginious_multifill/ntnu_inginious_multifill/problem.py:461
+#, python-brace-format
+msgid "Expected no decimal point in answer, got: '{}'"
+msgstr ""
+
+#: plugins/ntnu_inginious_multifill/ntnu_inginious_multifill/problem.py:464
+#, python-brace-format
+msgid "Expected a decimal point in answer, got: '{}'"
+msgstr ""
+
+#: plugins/ntnu_inginious_multifill/ntnu_inginious_multifill/problem.py:467
+#, python-brace-format
+msgid "Expected {} digits after the decimal point, got: '{}'"
+msgstr ""
+
+#: plugins/ntnu_inginious_multifill/ntnu_inginious_multifill/problem.py:472
+#, python-brace-format
+msgid "Expected a number, got '{}'"
+msgstr ""
+
+#: plugins/ntnu_inginious_multifill/ntnu_inginious_multifill/agent/__init__.py:126
 #, python-brace-format
 msgid "Points on this problem: {:g} / {:g}"
 msgstr ""
 
-#: plugins/ntnu_inginious_multifill/ntnu_inginious_multifill/agent/__init__.py:129
+#: plugins/ntnu_inginious_multifill/ntnu_inginious_multifill/agent/__init__.py:131
 #, python-brace-format
 msgid "You need at least {:g} points on this problem"
 msgstr ""
 
-#: plugins/ntnu_inginious_multifill/ntnu_inginious_multifill/agent/__init__.py:157
+#: plugins/ntnu_inginious_multifill/ntnu_inginious_multifill/agent/__init__.py:162
 #, python-brace-format
 msgid "Total points on this exercise: {:g} / {:g}"
 msgstr ""
 
-#: plugins/ntnu_inginious_multifill/ntnu_inginious_multifill/agent/__init__.py:160
+#: plugins/ntnu_inginious_multifill/ntnu_inginious_multifill/agent/__init__.py:166
 #, python-brace-format
-msgid "You need at least {:g} points to pass the exercise"
+msgid "You need at least {:g} points to pass the exercise."
+msgstr ""
+
+#: plugins/ntnu_inginious_multifill/ntnu_inginious_multifill/agent/__init__.py:170
+msgid "You did not meet the minimum points requirements on:"
+msgstr ""
+
+#: plugins/ntnu_inginious_multifill/ntnu_inginious_multifill/agent/__init__.py:172
+msgid "Question"
 msgstr ""
 

@@ -317,11 +317,11 @@ class Input:
                         raise ValueError(f"option 'casesensitive' does not take a value")
                     self._casesensitive = True
                 elif key == "decimals":
-                    if value is not None:
+                    if value is None:
                         raise ValueError(f"option 'decimals' expects a value")
                     self._decimals = int(value)
                 elif key == "tolerance":
-                    if value is not None:
+                    if value is None:
                         raise ValueError(f"option 'tolerance' expects a value")
                     self._tolerance = float(value)
                 else:
@@ -435,8 +435,8 @@ class Input:
             if not isinstance(response, str):
                 return (False, _("Answer to '{}' is not a string").format(dict_id))
 
-            original_response = response
-            answer = self._answer
+            original_response = response.strip()
+            answer = self._answer.strip()
 
             if self._ignorespace:
                 response = response.replace(" ", "").replace("\t", "")
@@ -454,17 +454,17 @@ class Input:
             points = response.count(".")
 
             if points > 1:
-                return (False, _("Too many decimal points in response: '{}'").format(original_response))
+                return (False, _("Too many decimal points in answer: '{}'").format(original_response))
 
             if self._decimals == 0:
                 if points != 0:
-                    return (False, _("Expected no decimal point in response: '{}'").format(original_response))
+                    return (False, _("Expected no decimal point in answer, got: '{}'").format(original_response))
             elif self._decimals is not None:
                 if points != 1:
-                    return (False, _("Expected a decimal point in response: '{}'").format(original_response))
+                    return (False, _("Expected a decimal point in answer, got: '{}'").format(original_response))
                 given_decimals = len(response) - response.find('.') - 1
                 if given_decimals != self._decimals:
-                    return (False, _("Expected {} digits after the decimal point, got {}").format(original_response))
+                    return (False, _("Expected {} digits after the decimal point, got: '{}'").format(self._decimals, original_response))
 
             try:
                 response_float = float(response)

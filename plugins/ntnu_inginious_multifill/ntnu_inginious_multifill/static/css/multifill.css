@@ -4,6 +4,11 @@
     gap: 1.25rem;
 }
 
+/* By default tables fill the whole width. Way too big! */
+.multifill-subtask table {
+    width: auto;
+}
+
 .multifill-subtask-titlebar {
     display: flex;
     flex-direction: row;
