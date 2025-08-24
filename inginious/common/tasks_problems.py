@@ -77,8 +77,14 @@ class Problem(object, metaclass=ABCMeta):
 
     @abstractmethod
     def input_type(self):
-        """ Indicates if problem input type """
-        return str
+        """
+        Indicates the problem's input type, and affects how a submitted form is parsed
+         - "str" means the problem has a single input with name="PID"
+         - "list" means the problem has a list of multiple name="PID"
+         - "file" means the problem has a type="file" name="PID"
+         - "dict" means the problem has multiple inputs, whose name all start with "PID["
+        """
+        return "str"
 
     @abstractmethod
     def check_answer(self, task_input, language):
@@ -155,7 +161,7 @@ class CodeProblem(Problem):
         self._default = content.get("default", "")
 
     def input_type(self):
-        return str
+        return "str"
 
     @classmethod
     def get_type(cls):
@@ -220,7 +226,7 @@ class FileProblem(Problem):
         self._allowed_exts = content.get("allowed_exts", None)
 
     def input_type(self):
-        return dict
+        return "file"
 
     def check_answer(self, _, __):
         return None, None, None, 0, ""
@@ -323,7 +329,7 @@ class MultipleChoiceProblem(Problem):
         return None
 
     def input_type(self):
-        return list if self._multiple else str
+        return "list" if self._multiple else "str"
 
     def input_is_consistent(self, task_input, default_allowed_extension, default_max_size):
         if self.get_id() not in task_input:
@@ -437,7 +443,7 @@ class MatchProblem(Problem):
         return self.get_id() in task_input
 
     def input_type(self):
-        return str
+        return "str"
 
     def check_answer(self, task_input, language):
         if task_input[self.get_id()].strip() == self._answer:

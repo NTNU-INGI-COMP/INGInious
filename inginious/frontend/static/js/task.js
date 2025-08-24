@@ -225,15 +225,21 @@ function taskFormValid()
 
     form.find('textarea,input[type="text"]').each(function()
     {
-        if($(this).attr('name') != undefined) //skip codemirror's internal textareas
-        {
-            if($(this).val() == "" && $(this).attr('data-optional') != "True")
-                answered_to_all = false;
-        }
+        if($(this).attr('name') == undefined) //skip codemirror's internal textareas
+            return;
+
+        if($(this).attr('data-optional'))
+            return;
+
+        if($(this).val() == "")
+            answered_to_all = false;
     });
 
     form.find('input[type="checkbox"],input[type="radio"]').each(function()
     {
+        if($(this).attr('data-optional'))
+            return;
+
         if(form.find("input[name='"+ $(this).attr('name')+"']:checked").length == 0)
         {
             answered_to_all = false;
