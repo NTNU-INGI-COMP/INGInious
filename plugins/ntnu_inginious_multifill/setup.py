@@ -8,7 +8,6 @@ setup(
     version="0.1dev0",
     description="Plugin to add problem types with multiple text entries",
     packages=find_packages(),
-    install_requires=["inginious>=0.9.dev0"],
     tests_require=[],
     extras_require={},
     scripts=[],

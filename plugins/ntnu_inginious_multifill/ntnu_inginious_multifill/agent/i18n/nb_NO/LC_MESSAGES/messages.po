@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-08-24 13:52+0200\n"
+"POT-Creation-Date: 2025-08-25 11:01+0200\n"
 "PO-Revision-Date: 2025-08-19 13:44+0200\n"
 "Last-Translator: Håvard Rognebakke Krogstie <havard.rkrogstie@ntnu.no>\n"
 "Language: nb_NO\n"
@@ -84,3 +84,4 @@ msgstr "Du møtte ikke minimumskravet til poeng på:"
 #: plugins/ntnu_inginious_multifill/ntnu_inginious_multifill/agent/__init__.py:172
 msgid "Question"
 msgstr "Spørsmål"
+
