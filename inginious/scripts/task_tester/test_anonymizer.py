@@ -60,7 +60,6 @@ input:
         eval,
         output;
 problems: {}
-response_type: rst
 result: crash
 state: {}
 status: error
@@ -119,10 +118,8 @@ def mock_inginious_install(tmp_path):
     os.mkdir(prefix)
     task_dir = os.path.join(prefix, 'tasks')
     os.mkdir(task_dir)
-    os.mkdir(os.path.join(prefix, 'backups'))
 
     config = """backend: local
-backup_directory: {prefix}/backups
 local-config: {{}}
 mongo_opt:
   database: INGInious

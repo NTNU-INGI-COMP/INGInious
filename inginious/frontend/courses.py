@@ -12,12 +12,14 @@ import re
 from typing import Iterable, List
 from collections import OrderedDict
 from pylti1p3.tool_config import ToolConfDict
+from datetime import datetime
 
 from inginious.common.tags import Tag
 from inginious.frontend.accessible_time import AccessibleTime
 from inginious.frontend.parsable_text import ParsableText
 from inginious.frontend.user_manager import UserInfo
 from inginious.frontend.task_dispensers.toc import TableOfContents
+from inginious.frontend.plugins import plugin_manager
 
 
 def _migrate_from_v_0_6(content, task_list):
@@ -35,12 +37,11 @@ def _migrate_from_v_0_6(content, task_list):
 class Course(object):
     """ A course with some modification for users """
 
-    def __init__(self, courseid, content, course_fs, task_factory, plugin_manager, task_dispensers, database):
+    def __init__(self, courseid, content, course_fs, task_factory, task_dispensers, database):
         self._id = courseid
         self._content = content
         self._fs = course_fs
         self._task_factory = task_factory
-        self._plugin_manager = plugin_manager
 
         self._translations = {}
         translations_fs = self._fs.from_subfolder("$i18n")
@@ -78,6 +79,8 @@ class Course(object):
             self._allow_unregister = self._content.get('allow_unregister', True)
             self._allow_preview = self._content.get('allow_preview', False)
             self._is_lti = self._content.get('is_lti', False)
+            self._is_archive = self._content.get('archived', False)
+            self._archive_date = datetime.fromisoformat(self._content["archive_date"]).astimezone() if "archive_date" in self._content else None
             self._lti_url = self._content.get('lti_url', '')
             self._lti_keys = self._content.get('lti_keys', {})
             self._lti_config = self._content.get('lti_config', {})
@@ -161,7 +164,10 @@ class Course(object):
 
     def get_accessibility(self, plugin_override=True):
         """ Return the AccessibleTime object associated with the accessibility of this course """
-        vals = self._plugin_manager.call_hook('course_accessibility', course=self, default=self._accessible)
+        if self.is_archive():
+            return AccessibleTime(False)
+
+        vals = plugin_manager.call_hook('course_accessibility', course=self, default=self._accessible)
         return vals[0] if len(vals) and plugin_override else self._accessible
 
     def get_registration_accessibility(self):
@@ -250,7 +256,7 @@ class Course(object):
 
     def allow_unregister(self, plugin_override=True):
         """ Returns True if students can unregister from course """
-        vals = self._plugin_manager.call_hook('course_allow_unregister', course=self, default=self._allow_unregister)
+        vals = plugin_manager.call_hook('course_allow_unregister', course=self, default=self._allow_unregister)
         return vals[0] if len(vals) and plugin_override else self._allow_unregister
 
     def get_name(self, language):
@@ -260,7 +266,7 @@ class Course(object):
     def get_description(self, language):
         """Returns the course description """
         description = self.gettext(language, self._description) if self._description else ''
-        return ParsableText(description, "rst", translation=self.get_translation_obj(language))
+        return ParsableText(description, "rst")
 
     def get_tags(self):
         return self._tags
@@ -274,3 +280,11 @@ class Course(object):
     def _build_ac_regex(self, list_ac):
         """ Build a regex for the AC list, allowing for fast matching. The regex is only used internally """
         return re.compile('|'.join(re.escape(x).replace("\\*", ".*") for x in list_ac))
+
+    def is_archive(self):
+        """ Returns true if the course is an archive"""
+        return self._is_archive
+
+    def get_archiving_date(self):
+        """ Returns the date at which the course was archived as a string (None if not archived)"""
+        return self._archive_date

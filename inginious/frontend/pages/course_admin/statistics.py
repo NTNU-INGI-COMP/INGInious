@@ -5,8 +5,9 @@
 
 """ Utilities for computation of statistics  """
 from collections import OrderedDict
+import zoneinfo
 
-import flask
+from flask import request, render_template
 
 from inginious.frontend.pages.course_admin.utils import make_csv, INGIniousSubmissionsAdminPage
 from datetime import datetime, date, timedelta
@@ -51,18 +52,20 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
 
     def _graph_stats(self, daterange, filter, limit):
         project = {
-            "year": {"$year": "$submitted_on"},
-            "month": {"$month": "$submitted_on"},
-            "day": {"$dayOfMonth": "$submitted_on"},
+            "year": {"$year": {"date": "$submitted_on", "timezone": self.user_manager.session_timezone()}},
+            "month": {"$month": {"date": "$submitted_on", "timezone": self.user_manager.session_timezone()}},
+            "day": {"$dayOfMonth": {"date": "$submitted_on", "timezone": self.user_manager.session_timezone()}},
             "result": "$result"
         }
         groupby = {"year": "$year", "month": "$month", "day": "$day"}
 
         method = "day"
         if (daterange[1] - daterange[0]).days < 7:
-            project["hour"] = {"$hour": "$submitted_on"}
+            project["hour"] = {"$hour": {"date": "$submitted_on", "timezone": self.user_manager.session_timezone()}}
             groupby["hour"] = "$hour"
             method = "hour"
+
+        tz = zoneinfo.ZoneInfo(self.user_manager.session_timezone())
 
         min_date = daterange[0].replace(minute=0, second=0, microsecond=0)
         max_date = daterange[1].replace(minute=0, second=0, microsecond=0)
@@ -72,7 +75,7 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
             max_date = max_date.replace(hour=0)
             delta1 = timedelta(days=1)
 
-        filter["submitted_on"] = {"$gte": min_date, "$lt": max_date+delta1}
+        filter["submitted_on"] = {"$gte": min_date, "$lt": max_date + delta1}
 
         stats_graph = self.database.submissions.aggregate(
             [{"$match": filter},
@@ -88,8 +91,8 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
         all_submissions = {}
         valid_submissions = {}
 
-        cur = min_date
-        while cur <= max_date:
+        cur = min_date.replace(tzinfo=None)
+        while cur <= max_date.replace(tzinfo=None):
             all_submissions[cur] = 0
             valid_submissions[cur] = 0
             cur += increment
@@ -143,7 +146,7 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
                 result[entry["_id"]]["succeeded"] = entry["succeeded"]
         return result
 
-    def _global_stats(self, tasks, filter, limit, best_submissions_list, pond_stat):
+    def _global_stats(self, course, tasks, filter, limit, best_submissions_list, pond_stat):
         submissions = self.database.submissions.find(filter)
         if limit is not None:
             submissions.limit(limit)
@@ -152,17 +155,17 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
         for d in data:
             d["best"] = d["_id"] in best_submissions_list  # mark best submissions
 
-        return compute_statistics(tasks, data, pond_stat)
+        return compute_statistics(course, tasks, data, pond_stat)
 
     def GET_AUTH(self, courseid):  # pylint: disable=arguments-differ
         """ GET request """
         course, __ = self.get_course_and_check_rights(courseid)
 
-        user_input = flask.request.args.copy()
-        user_input["users"] = flask.request.args.getlist("users")
-        user_input["audiences"] = flask.request.args.getlist("audiences")
-        user_input["tasks"] = flask.request.args.getlist("tasks")
-        user_input["org_categories"] = flask.request.args.getlist("org_categories")
+        user_input = request.args.copy()
+        user_input["users"] = request.args.getlist("users")
+        user_input["audiences"] = request.args.getlist("audiences")
+        user_input["tasks"] = request.args.getlist("tasks")
+        user_input["org_categories"] = request.args.getlist("org_categories")
         params = self.get_input_params(user_input, course, 500)
 
         return self.page(course, params)
@@ -171,11 +174,11 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
         """ GET request """
         course, __ = self.get_course_and_check_rights(courseid)
 
-        user_input = flask.request.form.copy()
-        user_input["users"] = flask.request.form.getlist("users")
-        user_input["audiences"] = flask.request.form.getlist("audiences")
-        user_input["tasks"] = flask.request.form.getlist("tasks")
-        user_input["org_categories"] = flask.request.form.getlist("org_categories")
+        user_input = request.form.copy()
+        user_input["users"] = request.form.getlist("users")
+        user_input["audiences"] = request.form.getlist("audiences")
+        user_input["tasks"] = request.form.getlist("tasks")
+        user_input["org_categories"] = request.form.getlist("org_categories")
         params = self.get_input_params(user_input, course, 500)
 
         return self.page(course, params)
@@ -183,20 +186,17 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
     def page(self, course, params):
         msgs = []
         daterange = [None, None]
-        try:
-            if params.get('date_before', ''):
-                daterange[1] = datetime.strptime(params["date_before"], "%Y-%m-%d %H:%M:%S")
-            if params.get('date_after', ''):
-                daterange[0] = datetime.strptime(params["date_after"], "%Y-%m-%d %H:%M:%S")
-        except ValueError:  # If match of datetime.strptime() fails
-            msgs.append(_("Invalid dates"))
+        if params.get('date_before', ''):
+            daterange[1] = datetime.fromisoformat(params["date_before"])
+        else:
+            daterange[1] = datetime.now(zoneinfo.ZoneInfo(self.user_manager.session_timezone()))
 
-        if daterange[0] is None or daterange[1] is None:
-            now = datetime.now().replace(minute=0, second=0, microsecond=0)
-            daterange = [now - timedelta(days=14), now]
+        if params.get('date_after', ''):
+            daterange[0] = datetime.fromisoformat(params["date_after"])
+        else:
+            daterange[0] = daterange[1].replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=14)
+            params["date_after"] = daterange[0].isoformat()
 
-        params["date_before"] = daterange[1].strftime("%Y-%m-%d %H:%M:%S")
-        params["date_after"] = daterange[0].strftime("%Y-%m-%d %H:%M:%S")
         display_hours = (daterange[1] - daterange[0]).days < 4
 
         users, tutored_users, audiences, tutored_audiences, tasks, limit = self.get_course_params(course, params)
@@ -209,19 +209,19 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
                                                  float(params["grade_min"]) if params.get('grade_min', '') else None,
                                                  float(params["grade_max"]) if params.get('grade_max', '') else None
                                              ],
-                                             submit_time_between=[x.strftime("%Y-%m-%d %H:%M:%S") for x in daterange],
+                                             submit_time_between=[x.isoformat() for x in daterange],
                                              keep_only_crashes="crashes_only" in params)
 
         stats_tasks = self._tasks_stats(tasks, filter, limit)
         stats_users = self._users_stats(filter, limit)
         stats_graph = self._graph_stats(daterange, filter, limit)
         stats_progress = self._progress_stats(course)
-        stats_global = self._global_stats(tasks, filter, limit, best_submissions_list, params.get('stat', 'normal') == 'pond_stat')
+        stats_global = self._global_stats(course, tasks, filter, limit, best_submissions_list, params.get('stat', 'normal') == 'pond_stat')
 
-        if "progress_csv" in flask.request.args:
+        if "progress_csv" in request.args:
             return make_csv(stats_progress)
 
-        return self.template_helper.render("course_admin/stats.html", course=course, users=users,
+        return render_template("course_admin/stats.html", course=course, users=users,
                                            tutored_users=tutored_users, audiences=audiences,
                                            tutored_audiences=tutored_audiences, tasks=tasks, old_params=params,
                                            stats_graph=stats_graph, stats_tasks=stats_tasks, stats_users=stats_users,
@@ -229,7 +229,7 @@ class CourseStatisticsPage(INGIniousSubmissionsAdminPage):
                                            display_hour=display_hours, msgs=msgs)
 
 
-def compute_statistics(tasks, data, ponderation):
+def compute_statistics(course, tasks, data, ponderation):
     """ 
     Compute statistics about submissions and tags.
     This function returns a tuple of lists following the format describe below:
@@ -244,7 +244,7 @@ def compute_statistics(tasks, data, ponderation):
         task = tasks.get(submission["taskid"], None)
         if task:
             username = "".join(submission["username"])
-            tags_of_course = [tag for key, tag in task.get_course().get_tags().items() if tag.get_type() in [0,1]]
+            tags_of_course = [tag for key, tag in course.get_tags().items() if tag.get_type() in [0,1]]
             for tag in tags_of_course:
                 super_dict.setdefault(tag, {})
                 super_dict[tag].setdefault(username, {})

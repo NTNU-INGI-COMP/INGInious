@@ -7,6 +7,7 @@
 import logging
 import hashlib
 import flask
+import tzlocal
 from typing import Dict, Optional
 
 from werkzeug.exceptions import NotFound
@@ -208,6 +209,10 @@ class UserManager:
         """ Returns the current session language """
         return self._session.get("language", default)
 
+    def session_timezone(self):
+        """ Returns the current session timezone """
+        return self._session.get("timezone", tzlocal.get_localzone_name())
+
     def session_code_indentation(self):
         """ Returns the current session code indentation """
         return self._session.get("code_indentation", "4")
@@ -239,6 +244,9 @@ class UserManager:
     def set_session_language(self, language):
         self._session["language"] = language
 
+    def set_session_timezone(self, timezone):
+        self._session["timezone"] = timezone
+
     def set_session_code_indentation(self, code_indentation):
         """ Sets the code indentation of the current user in the session, if one is open."""
         if self.session_logged_in():
@@ -251,6 +259,7 @@ class UserManager:
         self._session["username"] = user["username"]
         self._session["realname"] = user["realname"]
         self._session["language"] = user.get("language", "en")
+        self._session["timezone"] = user.get("timezone", tzlocal.get_localzone_name())
         self._session["code_indentation"] = user.get("code_indentation", "4")
         self._session["tos_signed"] = user.get("tos_accepted", False)
         self._session["token"] = None
@@ -724,7 +733,7 @@ class UserManager:
                                                                "submissionid": None, "state": ""}},
                                              upsert=True)
 
-    def update_user_stats(self, username, task, submission, result_str, grade, state, newsub, task_dispenser):
+    def update_user_stats(self, username, course, task, submission, result_str, grade, state, newsub, task_dispenser):
         """ Update stats with a new submission """
         self.user_saw_task(username, submission["courseid"], submission["taskid"])
 
@@ -748,13 +757,13 @@ class UserManager:
             def_sub = []
             if task_dispenser.get_evaluation_mode(task.get_id()) == 'best':  # if best, update cache consequently (with best submission)
                 def_sub = list(self._database.submissions.find(
-                    {"username": username, "courseid": task.get_course_id(), "taskid": task.get_id(),
+                    {"username": username, "courseid": course.get_id(), "taskid": task.get_id(),
                      "status": "done"}).sort(
                     [("grade", pymongo.DESCENDING), ("submitted_on", pymongo.DESCENDING)]).limit(1))
 
             elif task_dispenser.get_evaluation_mode(task.get_id()) == 'last':  # if last, update cache with last submission
                 def_sub = list(self._database.submissions.find(
-                    {"username": username, "courseid": task.get_course_id(), "taskid": task.get_id()})
+                    {"username": username, "courseid": course.get_id(), "taskid": task.get_id()})
                                .sort([("submitted_on", pymongo.DESCENDING)]).limit(1))
 
             if len(def_sub) > 0:
@@ -776,7 +785,7 @@ class UserManager:
                         "state": submission["state"]
                     }})
 
-    def task_is_visible_by_user(self, task, username=None, lti=None):
+    def task_is_visible_by_user(self, course, task, username=None, lti=None):
         """ Returns true if the task is visible and can be accessed by the user
 
         :param lti: indicates if the user is currently in a LTI session or not.
@@ -789,12 +798,11 @@ class UserManager:
         if username is None:
             username = self.session_username()
 
-        course = task.get_course()
         dispenser_filter = course.get_task_dispenser().get_accessibility(task.get_id(), username).after_start()
         return (self.course_is_open_to_user(course, username, lti) and dispenser_filter) \
-               or self.has_staff_rights_on_course(task.get_course(), username)
+               or self.has_staff_rights_on_course(course, username)
 
-    def task_can_user_submit(self, task, username=None, only_check=None, lti=None):
+    def task_can_user_submit(self, course, task, username=None, only_check=None, lti=None):
         """ returns true if the user can submit his work for this task
             :param only_check : only checks for 'groups', 'tokens', or None if all checks
             :param lti: indicates if the user is currently in a LTI session or not.
@@ -806,7 +814,6 @@ class UserManager:
         if username is None:
             username = self.session_username()
 
-        course = task.get_course()
         # Check if course access is ok
         course_registered = self.course_is_open_to_user(course, username, lti)
         # Check if task accessible to user
@@ -828,7 +835,7 @@ class UserManager:
 
         # Check for token availability
         enough_tokens = True
-        timenow = datetime.now()
+        timenow = datetime.now().astimezone()
         submission_limit = course.get_task_dispenser().get_submission_limit(task.get_id())
         if not only_check or only_check == 'tokens':
             if submission_limit == {"amount": -1, "period": -1}:
@@ -836,16 +843,16 @@ class UserManager:
                 enough_tokens = True
             else:
                 # select users with a cache for this particular task
-                user_tasks = list(self._database.user_tasks.find({"courseid": task.get_course_id(),
+                user_tasks = list(self._database.user_tasks.find({"courseid": course.get_id(),
                                                                   "taskid": task.get_id(),
                                                                   "username": {"$in": students}}))
 
                 # verify that they all can submit
                 def check_tokens_for_user_task(user_task):
-                    token_dict = user_task.get("tokens", {"amount": 0, "date": datetime.fromtimestamp(0)})
+                    token_dict = user_task.get("tokens", {"amount": 0, "date": datetime.fromtimestamp(0).astimezone()})
                     tokens_ok = token_dict.get("amount", 0) < submission_limit["amount"]
                     date_limited = submission_limit["period"] > 0
-                    need_reset = token_dict.get("date", datetime.fromtimestamp(0)) < timenow - timedelta(
+                    need_reset = token_dict.get("date", datetime.fromtimestamp(0).astimezone()) < timenow - timedelta(
                         hours=submission_limit["period"])
 
                     if date_limited and need_reset:
