@@ -97,26 +97,27 @@ class ScoreBoard(INGIniousAuthPage):
                 continue
 
             # Be sure we have a list
-            if not isinstance(submission["username"], list):
-                submission["username"] = [submission["username"]]
-            submission["username"] = tuple(submission["username"])
+            username = submission["username"]
+            if not isinstance(username, (list, tuple)):
+                username = [username]
+            username = tuple(username)
 
-            if submission["username"] not in result_per_user:
-                result_per_user[submission["username"]] = {}
+            if username not in result_per_user:
+                result_per_user[username] = {}
 
             # keep the best score
-            if submission["taskid"] not in result_per_user[submission["username"]]:
-                result_per_user[submission["username"]][submission["taskid"]] = new_score
+            if submission["taskid"] not in result_per_user[username]:
+                result_per_user[username][submission["taskid"]] = new_score
             else:
-                current_score = result_per_user[submission["username"]][submission["taskid"]]
+                current_score = result_per_user[username][submission["taskid"]]
 
                 task_reversed = scoreboard_reverse != (scoreboard_content[submission["taskid"]] < 0)
                 if task_reversed and current_score > new_score:
-                    result_per_user[submission["username"]][submission["taskid"]] = new_score
+                    result_per_user[username][submission["taskid"]] = new_score
                 elif not task_reversed and current_score < new_score:
-                    result_per_user[submission["username"]][submission["taskid"]] = new_score
+                    result_per_user[username][submission["taskid"]] = new_score
 
-            for user in submission["username"]:
+            for user in username:
                 users.add(user)
 
         # Get user names
