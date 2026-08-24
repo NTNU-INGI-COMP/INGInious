@@ -215,21 +215,33 @@ class UserManager:
 
         session.loggedin = False
 
+    @staticmethod
+    def _user_info(user) -> UserInfo:
+        """ Convert a User document into the UserInfo tuple exposed to the frontend.
+            A user is considered activated once the activation key has been consumed,
+            i.e. once the "activate" field is gone from the document.
+        """
+        return UserInfo(user["realname"], user["email"], user["username"], user["bindings"],
+                        user["language"], user["code_indentation"], "activate" not in user)
+
     def get_users_info(self, usernames, limit=0, skip=0) -> Dict[str, Optional[UserInfo]]:
         """
-        :param usernames: a list of usernames
+        :param usernames: a list of usernames to look up, or None to page through every user
         :param limit A limit of users requested
         :param skip A quantity of users to skip
         :return: a dict, in the form {username: val}, where val is either None if the user cannot be found,
         or a UserInfo. If the list of usernames is empty, return an empty dict.
         """
         query = {"username__in": usernames} if usernames is not None else {}
-        infos = User.objects(**query).skip(skip).limit(limit)
+        found = {user["username"]: self._user_info(user)
+                 for user in User.objects(**query).skip(skip).limit(limit)}
 
-        retval = {info["username"]: UserInfo(info["realname"], info["email"], info["username"], info["bindings"],
-                                             info["language"], info["code_indentation"], "activate" not in info)
-                  for info in infos}
-        return retval
+        if usernames is None:
+            return found
+
+        # Answer for every username that was asked about, so that callers can tell
+        # "this user has no account" (None) apart from an absent key
+        return {username: found.get(username) for username in usernames}
 
     def get_user_info(self, username) -> Optional[UserInfo]:
         """
